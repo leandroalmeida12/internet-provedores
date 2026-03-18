@@ -9,7 +9,7 @@ RUN composer install --no-dev --optimize-autoloader
 COPY . .
 
 # Etapa 2 - Runtime
-FROM php:8.2-fpm
+FROM php:8.4-fpm
 
 RUN apt-get update && apt-get install -y \
     libzip-dev zip unzip git \
