@@ -3,28 +3,33 @@ FROM composer:2 AS build
 
 WORKDIR /app
 
-# Copia apenas composer.json (não precisa de composer.lock)
-COPY composer.json ./
-RUN composer install --no-dev --optimize-autoloader
-
-# Copia todo o projeto
+# Copiar tudo primeiro
 COPY . .
 
-# Etapa 2 - Runtime
+# Instalar dependências
+RUN composer install --no-dev --optimize-autoloader
+
+# Etapa 2 - Runtime (PHP 8.4)
 FROM php:8.4-fpm
 
 RUN apt-get update && apt-get install -y \
     libzip-dev zip unzip git \
     && docker-php-ext-install pdo pdo_mysql zip
 
+WORKDIR /app
+
+# Copiar aplicação pronta do build
 COPY --from=build /app /app
 
-WORKDIR /app
+# Criar pastas necessárias (evita erro 255)
+RUN mkdir -p storage/framework/cache \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs
 
 # Gerar APP_KEY
 RUN php artisan key:generate --force
 
 EXPOSE 8080
 
-# Inicia Laravel
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8080"]
